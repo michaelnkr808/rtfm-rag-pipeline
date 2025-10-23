@@ -1,19 +1,22 @@
 import chromadb
+import datetime 
+from embedder import GeminiEmbeddingFunction
 
 chroma_client = chromadb.PersistentClient(path="./data/chroma_db")
 
-collection = chroma_client.create_collection(name="discord-messages")
+gemini_embed_fn = GeminiEmbeddingFunction()
 
-collection.add(
-    documents=["test", "this is another test"]
-    metadatas=[{"source": "my_source", "page":1}, {"source": "my_source"}],
-    ids=["id1", "id2"]
-)
-    
-results = collection.query(
-    query_text["This is a query document"],
-    n_results = 2,
-    include = ['distance', 'metadata', 'documents']
-)
+def get_server_collection(server_id: str) -> chromadb.Collection:
 
-results
+    collection_name = f"discord-server-{server_id}"
+
+    collection = chroma_client.get_or_create_collection(name=f"{collection_name}",
+        metadata = {
+            "description": "Discord message collection for Server ID: {server_id}",
+            "created" : str(datetime.datetime.now()),
+        },
+        embedding_function=gemini_embed_fn
+    )
+
+    print(f"Accessed collection: {collection.name}")
+    return collection
